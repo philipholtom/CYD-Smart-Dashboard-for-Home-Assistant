@@ -1,10 +1,14 @@
 esphome:
-  name: YOUR DEVICE NAME
-  friendly_name: YOUR DEVICE FRIENDLY NAME
+  name: cyd-ha-dashboard
+  friendly_name: CYD HA Dashboard
+  includes:
+    - radar.h
   on_boot:
     priority: -10
     then:
       - light.turn_on: backlight
+      - delay: 4s
+      - script.execute: radar_refresh_script
 
 esp32:
   board: esp32dev
@@ -17,11 +21,11 @@ logger:
 
 api:
   encryption:
-    key: "YOUR API KEY"
+    key: "y1SfF6cI9QNdFY9O0ZxI2J8UpMYgeU68rFzfJKFv2x4="
 
 ota:
   - platform: esphome
-    password: "YOUR OTA PASSWORD"
+    password: "0ae1cee4703e5f6381516eca3bfa570b"
 
 wifi:
   ssid: !secret wifi_ssid
@@ -40,40 +44,37 @@ substitutions:
   # ==============================================================================
 
   # --- SENSOR 1: SOLAR ---
-  s1_entity: "sensor.foxess_solar_power"
-  s1_label: "Solar Power"
-  s1_unit: "W"
-  s1_tap_action: "script.dummy_script"
+  s1_entity: "light.office_lamp"
+  s1_label: "Office Lamp"
+  s1_unit: "%%"
+  s1_tap_action: "light.office_lamp"
   s1_icon: "\uec0f"
   
   s1_icon_logic: |-
     return "${s1_icon}"; 
     
   s1_color_logic: |-
-    if (x > 2000) return lv_color_hex(0xFFA500); 
-    if (x > 0) return lv_color_hex(0xFFD700);    
-    return lv_color_hex(0x888888);               
+    if (x > 0) return lv_color_hex(0xFFD700);
+    return lv_color_hex(0x888888);
 
   # --- SENSOR 2: WATER ---
-  s2_entity: "sensor.esp_temp_temperatura_agua"
-  s2_label: "Water Temp"
-  s2_unit: "°C"
-  s2_tap_action: "script.trigger_water_heater"
+  s2_entity: "light.h607c"
+  s2_label: "Office Floor Lamp"
+  s2_unit: "%%"
+  s2_tap_action: "light.h607c"
   s2_icon: "\uf061"
 
   s2_icon_logic: |-
     return "${s2_icon}";
     
   s2_color_logic: |-
-    if (x >= 45) return lv_color_hex(0xE05400); 
-    if (x >= 40) return lv_color_hex(0x33A400); 
-    if (x >= 30) return lv_color_hex(0x28FFB6); 
-    return lv_color_hex(0x00BFFF);              
+    if (x > 0) return lv_color_hex(0xFFD700);
+    return lv_color_hex(0x888888);
 
-  # --- SENSOR 3: GRID ---
-  s3_entity: "sensor.foxess_grid_consumption_power"
-  s3_label: "Grid Power"
-  s3_unit: "W"
+  # --- SENSOR 3: OFFICE DOOR TEMP ---
+  s3_entity: "sensor.study_study_door_temperature"
+  s3_label: "Office Door"
+  s3_unit: "°C"
   s3_tap_action: "script.dummy_script"
   s3_icon: "\uf102"
 
@@ -81,13 +82,14 @@ substitutions:
     return "${s3_icon}";
     
   s3_color_logic: |-
-    if (x > 3000) return lv_color_hex(0xFF5252); 
-    return lv_color_hex(0xFF6347);               
+    if (x > 25) return lv_color_hex(0xFFA500);
+    if (x < 15) return lv_color_hex(0x00BFFF);
+    return lv_color_hex(0x32CD32);
 
-  # --- SENSOR 4: OUTDOOR ---
-  s4_entity: "sensor.clima_exterior_temperatura"
-  s4_label: "Outdoor"
-  s4_unit: "°C"
+  # --- SENSOR 4: OFFICE DOOR BATTERY ---
+  s4_entity: "sensor.study_study_door_battery"
+  s4_label: "Door Battery"
+  s4_unit: "%%"
   s4_tap_action: "script.dummy_script"
   s4_icon: "\ue1ff"
 
@@ -95,14 +97,13 @@ substitutions:
     return "${s4_icon}";
     
   s4_color_logic: |-
-    if (x > 30) return lv_color_hex(0xFF5252);   
-    if (x > 25) return lv_color_hex(0xFFA500);   
-    if (x < 15) return lv_color_hex(0x00BFFF);   
-    return lv_color_hex(0x32CD32);               
+    if (x < 20) return lv_color_hex(0xFF5252);
+    if (x < 40) return lv_color_hex(0xFFA500);
+    return lv_color_hex(0x32CD32);
 
-  # --- SENSOR 5: BATTERY (Dynamic Icons) ---
-  s5_entity: "sensor.foxess_bat_soc"
-  s5_label: "Home Battery"
+  # --- SENSOR 5: OFFICE FRAME BATTERY (Dynamic Icons) ---
+  s5_entity: "sensor.office_frame_battery"
+  s5_label: "Frame Battery"
   s5_unit: "%%"
   s5_tap_action: "script.dummy_script"
   
@@ -125,10 +126,10 @@ substitutions:
     if (x >= 20) return lv_color_hex(0x8B0000);  
     return lv_color_hex(0x640B0B);               
 
-  # --- SENSOR 6: HUMIDITY ---
-  s6_entity: "sensor.clima_exterior_humidade"
-  s6_label: "Humidity"
-  s6_unit: "%%"
+  # --- SENSOR 6: NAS USED SPACE ---
+  s6_entity: "sensor.filestation_volume_2_used_space"
+  s6_label: "NAS Used"
+  s6_unit: "TB"
   s6_tap_action: "script.dummy_script"
   s6_icon: "\ue798"
 
@@ -136,13 +137,73 @@ substitutions:
     return "${s6_icon}";
     
   s6_color_logic: |-
-    if (x > 80) return lv_color_hex(0x00BFFF);   
-    if (x > 60) return lv_color_hex(0x87CEEB);   
-    if (x < 30) return lv_color_hex(0xFFD700);   
-    return lv_color_hex(0x32CD32);  
+    if (x > 14.76) return lv_color_hex(0xFF5252);
+    if (x > 12.3) return lv_color_hex(0xFFA500);
+    return lv_color_hex(0x00BFFF);
+
+  # --- RADAR PAGE ---
+  # Centred on Radlett, Hertfordshire (the board has no GPS, so this is fixed).
+  radar_lat: "51.6836"
+  radar_lon: "-0.3181"
+  # Search radius in nautical miles. This board has no PSRAM, so a 96KB
+  # response buffer failed to allocate outright near a busy area (25nm was
+  # ~52KB of JSON). 12nm keeps the response comfortably small; raise it only
+  # if you've confirmed there's headroom (watch "free heap before fetch" in
+  # the logs) - see max_response_buffer_size below.
+  radar_range_nm: "12"
+  # How often to re-poll adsb.lol. Their courtesy limit is ~1 request/second,
+  # so there's no reason to go faster than this.
+  radar_refresh: "45s"
 
 http_request:
   timeout: 5s
+
+json:
+
+# --- RADAR: fetch adsb.lol and redraw the canvas ---
+script:
+  - id: radar_refresh_script
+    then:
+      - lambda: |-
+          ESP_LOGD("radar", "free heap before fetch: %u bytes", (unsigned) esp_get_free_heap_size());
+      - http_request.get:
+          # Plain HTTP on purpose: adsb.lol serves it fine, and skipping the TLS
+          # handshake avoids its (large, on ESP32) buffer allocation - the real
+          # cause of the failures below. No credentials involved either way.
+          url: "http://api.adsb.lol/v2/point/${radar_lat}/${radar_lon}/${radar_range_nm}"
+          capture_response: true
+          # http_request.get() allocates this whole buffer as ONE contiguous
+          # block up front. A 96KB ask over HTTPS failed outright (no free
+          # heap for the TLS handshake). Switching to plain HTTP + shrinking
+          # the canvas got free heap up to ~82KB - plenty for this. Real
+          # payload at 12nm measured ~21.3KB; give it real headroom.
+          max_response_buffer_size: 32kB
+          on_response:
+            then:
+              - lambda: |-
+                  ESP_LOGD("radar", "adsb.lol response: status=%d bytes=%u",
+                           response->status_code, (unsigned) body.size());
+                  auto r = radar::summarize(${radar_lat}, ${radar_lon}, ${radar_range_nm},
+                                            body, response->status_code == 200);
+                  lv_label_set_text(id(val_radar_status), r.status);
+                  lv_label_set_text(id(val_radar_callsign), r.callsign);
+                  lv_label_set_text(id(val_radar_line1), r.line1);
+                  lv_label_set_text(id(val_radar_line2), r.line2);
+                  lv_label_set_text(id(val_radar_sub), r.sub);
+                  lv_label_set_text(id(val_radar_next1), r.next1);
+                  lv_label_set_text(id(val_radar_next2), r.next2);
+          on_error:
+            then:
+              - lambda: |-
+                  ESP_LOGW("radar", "adsb.lol request failed (no response)");
+                  auto r = radar::summarize(${radar_lat}, ${radar_lon}, ${radar_range_nm}, "", false);
+                  lv_label_set_text(id(val_radar_status), r.status);
+                  lv_label_set_text(id(val_radar_callsign), r.callsign);
+                  lv_label_set_text(id(val_radar_line1), r.line1);
+                  lv_label_set_text(id(val_radar_line2), r.line2);
+                  lv_label_set_text(id(val_radar_sub), r.sub);
+                  lv_label_set_text(id(val_radar_next1), r.next1);
+                  lv_label_set_text(id(val_radar_next2), r.next2);
 
 output:
   - platform: ledc
@@ -187,25 +248,30 @@ touchscreen:
   spi_id: touch
   cs_pin: GPIO33
   calibration:
-    x_min: 220
-    x_max: 3756
-    y_min: 394
-    y_max: 3749
+    x_min: 364
+    x_max: 3690
+    y_min: 272
+    y_max: 3791
   transform:
     swap_xy: true
     mirror_x: false
-    mirror_y: false
+    mirror_y: true
 
 # --- FONTS ---
 font:
   - file: "gfonts://Roboto"
     id: roboto_24
     size: 24
-    glyphs: "0123456789%.°WCckmVA "
+    # Widened so arbitrary flight callsigns AND registrations (e.g. "G-CMRC",
+    # used as a fallback when there's no live callsign) render fully - the
+    # original set only had a handful of letters baked in, and no hyphen.
+    glyphs: "0123456789%.°-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/ "
   - file: "gfonts://Roboto"
     id: roboto_16
     size: 16
-    glyphs: "0123456789:/- abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚáéíóúÀàÇçÃãÕõ°"
+    # Added "." - missing before, so any decimal (e.g. "18.0 nm") showed a
+    # blank box glyph where the point should be.
+    glyphs: "0123456789:/.- abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚáéíóúÀàÇçÃãÕõ°<>"
   - file: "gfonts://Roboto"
     id: roboto_12
     size: 12
@@ -286,6 +352,11 @@ sensor:
   - platform: homeassistant
     id: ha_sensor_1
     entity_id: ${s1_entity}
+    attribute: brightness
+    filters:
+      - lambda: |-
+          if (isnan(x)) return 0.0;
+          return x / 255.0 * 100.0;
     on_value:
       then:
         - lvgl.label.update:
@@ -303,11 +374,16 @@ sensor:
   - platform: homeassistant
     id: ha_sensor_2
     entity_id: ${s2_entity}
+    attribute: brightness
+    filters:
+      - lambda: |-
+          if (isnan(x)) return 0.0;
+          return x / 255.0 * 100.0;
     on_value:
       then:
         - lvgl.label.update:
             id: val_s2
-            text: !lambda 'return str_sprintf("%.1f${s2_unit}", x);'
+            text: !lambda 'return str_sprintf("%.0f${s2_unit}", x);'
         - lvgl.label.update:
             id: icon_s2
             text: !lambda |-
@@ -324,7 +400,7 @@ sensor:
       then:
         - lvgl.label.update:
             id: val_s3
-            text: !lambda 'return str_sprintf("%.0f${s3_unit}", x);'
+            text: !lambda 'return str_sprintf("%.1f${s3_unit}", x);'
         - lvgl.label.update:
             id: icon_s3
             text: !lambda |-
@@ -341,7 +417,7 @@ sensor:
       then:
         - lvgl.label.update:
             id: val_s4
-            text: !lambda 'return str_sprintf("%.1f${s4_unit}", x);'
+            text: !lambda 'return str_sprintf("%.0f${s4_unit}", x);'
         - lvgl.label.update:
             id: icon_s4
             text: !lambda |-
@@ -375,7 +451,7 @@ sensor:
       then:
         - lvgl.label.update:
             id: val_s6
-            text: !lambda 'return str_sprintf("%.0f${s6_unit}", x);'
+            text: !lambda 'return str_sprintf("%.1f${s6_unit}", x);'
         - lvgl.label.update:
             id: icon_s6
             text: !lambda |-
@@ -385,11 +461,137 @@ sensor:
             text_color: !lambda |-
               ${s6_color_logic}
 
+  # ==============================================================================
+  #  WEATHER PAGE DATA (weather.home)
+  # ==============================================================================
+  - platform: homeassistant
+    id: ha_weather_temp
+    entity_id: weather.home
+    attribute: temperature
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: val_w_temp
+            text: !lambda 'return str_sprintf("%.1f°C", x);'
+
+  - platform: homeassistant
+    id: ha_weather_humidity
+    entity_id: weather.home
+    attribute: humidity
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: val_w_humidity
+            text: !lambda 'return str_sprintf("%.0f%%", x);'
+
+  - platform: homeassistant
+    id: ha_weather_wind
+    entity_id: weather.home
+    attribute: wind_speed
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: val_w_wind
+            text: !lambda 'return str_sprintf("%.0fkm/h", x);'
+
+  - platform: homeassistant
+    id: ha_weather_pressure
+    entity_id: weather.home
+    attribute: pressure
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: val_w_pressure
+            text: !lambda 'return str_sprintf("%.0fhPa", x);'
+
+  - platform: homeassistant
+    id: ha_weather_uv
+    entity_id: weather.home
+    attribute: uv_index
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: val_w_uv
+            text: !lambda 'return str_sprintf("%.1f", x);'
+
+text_sensor:
+  - platform: homeassistant
+    id: ha_weather_condition
+    entity_id: weather.home
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: val_w_condition
+            text: !lambda |-
+              if (x == "clear-night") return "Clear Night";
+              if (x == "cloudy") return "Cloudy";
+              if (x == "exceptional") return "Exceptional";
+              if (x == "fog") return "Fog";
+              if (x == "hail") return "Hail";
+              if (x == "lightning") return "Lightning";
+              if (x == "lightning-rainy") return "Thunderstorms";
+              if (x == "partlycloudy") return "Partly Cloudy";
+              if (x == "pouring") return "Pouring";
+              if (x == "rainy") return "Rainy";
+              if (x == "snowy") return "Snowy";
+              if (x == "snowy-rainy") return "Snow/Rain";
+              if (x == "sunny") return "Sunny";
+              if (x == "windy") return "Windy";
+              if (x == "windy-variant") return "Windy";
+              return x;
+
+# ==============================================================================
+#  PRINTER PAGE POLLING (BambuHelper /status endpoint)
+# ==============================================================================
+interval:
+  - interval: 10s
+    then:
+      - http_request.get:
+          url: "http://192.168.3.150/status"
+          capture_response: true
+          on_response:
+            then:
+              - lambda: |-
+                  json::parse_json(body, [](JsonObject root) -> bool {
+                    std::string state = root["state"] | "";
+                    float progress = root["progress"] | 0.0f;
+                    float nozzle = root["nozzle"] | 0.0f;
+                    float bed = root["bed"] | 0.0f;
+                    float fan = root["fan"] | 0.0f;
+                    int layer = root["layer"] | 0;
+
+                    std::string status_text = state;
+                    if (state == "IDLE") status_text = "Idle";
+                    else if (state == "RUNNING") status_text = "Printing";
+                    else if (state == "PAUSE") status_text = "Paused";
+                    else if (state == "FINISH") status_text = "Finished";
+                    else if (state == "FAILED") status_text = "Failed";
+                    else if (state == "PREPARE") status_text = "Preparing";
+
+                    lv_label_set_text(id(val_p_status), status_text.c_str());
+                    lv_label_set_text(id(val_p_progress), str_sprintf("%.0f%%", progress).c_str());
+                    lv_label_set_text(id(val_p_nozzle), str_sprintf("%.0f°C", nozzle).c_str());
+                    lv_label_set_text(id(val_p_bed), str_sprintf("%.0f°C", bed).c_str());
+                    lv_label_set_text(id(val_p_fan), str_sprintf("%.0f%%", fan).c_str());
+                    lv_label_set_text(id(val_p_layer), str_sprintf("%d", layer).c_str());
+                    return true;
+                  });
+          on_error:
+            then:
+              - lvgl.label.update:
+                  id: val_p_status
+                  text: "Offline"
+
+  # --- RADAR: periodic adsb.lol refresh ---
+  - interval: ${radar_refresh}
+    then:
+      - script.execute: radar_refresh_script
+
 # ==============================================================================
 #  GRAPHICAL INTERFACE (LVGL)
 # ==============================================================================
 lvgl:
-  rotation: 180
+  rotation: 0
   displays: [my_display]
   touchscreens: [my_touchscreen]
   
@@ -413,6 +615,24 @@ lvgl:
             align: TOP_RIGHT
             x: -5
             y: 5
+        - button:
+            align: TOP_MID
+            y: 2
+            width: 70
+            height: 22
+            bg_opa: TRANSP
+            border_width: 0
+            shadow_width: 0
+            radius: 0
+            scrollbar_mode: "off"
+            widgets:
+              - label:
+                  text: "Weather >"
+                  text_font: roboto_12
+                  text_color: 0x00BFFF
+                  align: CENTER
+            on_press:
+              - lvgl.page.show: weather_page
 
         # ==================== SENSOR 1 ====================
         - button:
@@ -450,7 +670,7 @@ lvgl:
                   y: 12
             on_press:
               - homeassistant.service:
-                  service: script.turn_on
+                  service: light.toggle
                   data:
                     entity_id: ${s1_tap_action}
 
@@ -490,7 +710,7 @@ lvgl:
                   y: 12
             on_press:
               - homeassistant.service:
-                  service: script.turn_on
+                  service: light.toggle
                   data:
                     entity_id: ${s2_tap_action}
 
@@ -653,3 +873,563 @@ lvgl:
                   service: script.turn_on
                   data:
                     entity_id: ${s6_tap_action}
+
+    - id: weather_page
+      bg_color: 0x000000
+      widgets:
+        # --- HEADER ---
+        - label:
+            text: "Weather"
+            text_font: roboto_16
+            text_color: 0xFFFFFF
+            x: 5
+            y: 5
+        - button:
+            align: TOP_MID
+            y: 2
+            width: 70
+            height: 22
+            bg_opa: TRANSP
+            border_width: 0
+            shadow_width: 0
+            radius: 0
+            scrollbar_mode: "off"
+            widgets:
+              - label:
+                  text: "Printer >"
+                  text_font: roboto_12
+                  text_color: 0x00BFFF
+                  align: CENTER
+            on_press:
+              - lvgl.page.next:
+
+        # ==================== CONDITION ====================
+        - button:
+            x: 5
+            y: 35
+            width: 150
+            height: 63
+            bg_opa: TRANSP
+            border_width: 0
+            shadow_width: 0
+            radius: 0
+            scrollbar_mode: "off"
+            widgets:
+              - label:
+                  text: ""
+                  text_font: icon_font_32
+                  text_color: 0xFFD700
+                  align: LEFT_MID
+                  x: 5
+              - label:
+                  text: "Condition"
+                  text_font: roboto_12
+                  text_color: 0xAAAAAA
+                  align: LEFT_MID
+                  x: 45
+                  y: -12
+              - label:
+                  id: val_w_condition
+                  text: "--"
+                  text_font: roboto_16
+                  text_color: 0xFFFFFF
+                  align: LEFT_MID
+                  x: 45
+                  y: 12
+
+        # ==================== TEMPERATURE ====================
+        - button:
+            x: 165
+            y: 35
+            width: 150
+            height: 63
+            bg_opa: TRANSP
+            border_width: 0
+            shadow_width: 0
+            radius: 0
+            scrollbar_mode: "off"
+            widgets:
+              - label:
+                  text: ""
+                  text_font: icon_font_32
+                  text_color: 0x00BFFF
+                  align: LEFT_MID
+                  x: 5
+              - label:
+                  text: "Temperature"
+                  text_font: roboto_12
+                  text_color: 0xAAAAAA
+                  align: LEFT_MID
+                  x: 45
+                  y: -12
+              - label:
+                  id: val_w_temp
+                  text: "--"
+                  text_font: roboto_24
+                  text_color: 0xFFFFFF
+                  align: LEFT_MID
+                  x: 45
+                  y: 12
+
+        # ==================== HUMIDITY ====================
+        - button:
+            x: 5
+            y: 100
+            width: 150
+            height: 63
+            bg_opa: TRANSP
+            border_width: 0
+            shadow_width: 0
+            radius: 0
+            scrollbar_mode: "off"
+            widgets:
+              - label:
+                  text: ""
+                  text_font: icon_font_32
+                  text_color: 0x87CEEB
+                  align: LEFT_MID
+                  x: 5
+              - label:
+                  text: "Humidity"
+                  text_font: roboto_12
+                  text_color: 0xAAAAAA
+                  align: LEFT_MID
+                  x: 45
+                  y: -12
+              - label:
+                  id: val_w_humidity
+                  text: "--"
+                  text_font: roboto_24
+                  text_color: 0xFFFFFF
+                  align: LEFT_MID
+                  x: 45
+                  y: 12
+
+        # ==================== WIND ====================
+        - button:
+            x: 165
+            y: 100
+            width: 150
+            height: 63
+            bg_opa: TRANSP
+            border_width: 0
+            shadow_width: 0
+            radius: 0
+            scrollbar_mode: "off"
+            widgets:
+              - label:
+                  text: ""
+                  text_font: icon_font_32
+                  text_color: 0x32CD32
+                  align: LEFT_MID
+                  x: 5
+              - label:
+                  text: "Wind"
+                  text_font: roboto_12
+                  text_color: 0xAAAAAA
+                  align: LEFT_MID
+                  x: 45
+                  y: -12
+              - label:
+                  id: val_w_wind
+                  text: "--"
+                  text_font: roboto_24
+                  text_color: 0xFFFFFF
+                  align: LEFT_MID
+                  x: 45
+                  y: 12
+
+        # ==================== PRESSURE ====================
+        - button:
+            x: 5
+            y: 165
+            width: 150
+            height: 63
+            bg_opa: TRANSP
+            border_width: 0
+            shadow_width: 0
+            radius: 0
+            scrollbar_mode: "off"
+            widgets:
+              - label:
+                  text: ""
+                  text_font: icon_font_32
+                  text_color: 0x888888
+                  align: LEFT_MID
+                  x: 5
+              - label:
+                  text: "Pressure"
+                  text_font: roboto_12
+                  text_color: 0xAAAAAA
+                  align: LEFT_MID
+                  x: 45
+                  y: -12
+              - label:
+                  id: val_w_pressure
+                  text: "--"
+                  text_font: roboto_24
+                  text_color: 0xFFFFFF
+                  align: LEFT_MID
+                  x: 45
+                  y: 12
+
+        # ==================== UV INDEX ====================
+        - button:
+            x: 165
+            y: 165
+            width: 150
+            height: 63
+            bg_opa: TRANSP
+            border_width: 0
+            shadow_width: 0
+            radius: 0
+            scrollbar_mode: "off"
+            widgets:
+              - label:
+                  text: ""
+                  text_font: icon_font_32
+                  text_color: 0xFFA500
+                  align: LEFT_MID
+                  x: 5
+              - label:
+                  text: "UV Index"
+                  text_font: roboto_12
+                  text_color: 0xAAAAAA
+                  align: LEFT_MID
+                  x: 45
+                  y: -12
+              - label:
+                  id: val_w_uv
+                  text: "--"
+                  text_font: roboto_24
+                  text_color: 0xFFFFFF
+                  align: LEFT_MID
+                  x: 45
+                  y: 12
+
+    - id: printer_page
+      bg_color: 0x000000
+      widgets:
+        # --- HEADER ---
+        - label:
+            text: "Printer"
+            text_font: roboto_16
+            text_color: 0xFFFFFF
+            x: 5
+            y: 5
+        - button:
+            align: TOP_MID
+            y: 2
+            width: 70
+            height: 22
+            bg_opa: TRANSP
+            border_width: 0
+            shadow_width: 0
+            radius: 0
+            scrollbar_mode: "off"
+            widgets:
+              - label:
+                  text: "Radar >"
+                  text_font: roboto_12
+                  text_color: 0x00BFFF
+                  align: CENTER
+            on_press:
+              - lvgl.page.next:
+
+        # ==================== STATUS ====================
+        - button:
+            x: 5
+            y: 35
+            width: 150
+            height: 63
+            bg_opa: TRANSP
+            border_width: 0
+            shadow_width: 0
+            radius: 0
+            scrollbar_mode: "off"
+            widgets:
+              - label:
+                  text: ""
+                  text_font: icon_font_32
+                  text_color: 0xFFD700
+                  align: LEFT_MID
+                  x: 5
+              - label:
+                  text: "Status"
+                  text_font: roboto_12
+                  text_color: 0xAAAAAA
+                  align: LEFT_MID
+                  x: 45
+                  y: -12
+              - label:
+                  id: val_p_status
+                  text: "--"
+                  text_font: roboto_16
+                  text_color: 0xFFFFFF
+                  align: LEFT_MID
+                  x: 45
+                  y: 12
+
+        # ==================== PROGRESS ====================
+        - button:
+            x: 165
+            y: 35
+            width: 150
+            height: 63
+            bg_opa: TRANSP
+            border_width: 0
+            shadow_width: 0
+            radius: 0
+            scrollbar_mode: "off"
+            widgets:
+              - label:
+                  text: ""
+                  text_font: icon_font_32
+                  text_color: 0x32CD32
+                  align: LEFT_MID
+                  x: 5
+              - label:
+                  text: "Progress"
+                  text_font: roboto_12
+                  text_color: 0xAAAAAA
+                  align: LEFT_MID
+                  x: 45
+                  y: -12
+              - label:
+                  id: val_p_progress
+                  text: "--"
+                  text_font: roboto_24
+                  text_color: 0xFFFFFF
+                  align: LEFT_MID
+                  x: 45
+                  y: 12
+
+        # ==================== NOZZLE ====================
+        - button:
+            x: 5
+            y: 100
+            width: 150
+            height: 63
+            bg_opa: TRANSP
+            border_width: 0
+            shadow_width: 0
+            radius: 0
+            scrollbar_mode: "off"
+            widgets:
+              - label:
+                  text: ""
+                  text_font: icon_font_32
+                  text_color: 0xFF6347
+                  align: LEFT_MID
+                  x: 5
+              - label:
+                  text: "Nozzle"
+                  text_font: roboto_12
+                  text_color: 0xAAAAAA
+                  align: LEFT_MID
+                  x: 45
+                  y: -12
+              - label:
+                  id: val_p_nozzle
+                  text: "--"
+                  text_font: roboto_24
+                  text_color: 0xFFFFFF
+                  align: LEFT_MID
+                  x: 45
+                  y: 12
+
+        # ==================== BED ====================
+        - button:
+            x: 165
+            y: 100
+            width: 150
+            height: 63
+            bg_opa: TRANSP
+            border_width: 0
+            shadow_width: 0
+            radius: 0
+            scrollbar_mode: "off"
+            widgets:
+              - label:
+                  text: ""
+                  text_font: icon_font_32
+                  text_color: 0xFFA500
+                  align: LEFT_MID
+                  x: 5
+              - label:
+                  text: "Bed"
+                  text_font: roboto_12
+                  text_color: 0xAAAAAA
+                  align: LEFT_MID
+                  x: 45
+                  y: -12
+              - label:
+                  id: val_p_bed
+                  text: "--"
+                  text_font: roboto_24
+                  text_color: 0xFFFFFF
+                  align: LEFT_MID
+                  x: 45
+                  y: 12
+
+        # ==================== FAN ====================
+        - button:
+            x: 5
+            y: 165
+            width: 150
+            height: 63
+            bg_opa: TRANSP
+            border_width: 0
+            shadow_width: 0
+            radius: 0
+            scrollbar_mode: "off"
+            widgets:
+              - label:
+                  text: ""
+                  text_font: icon_font_32
+                  text_color: 0x87CEEB
+                  align: LEFT_MID
+                  x: 5
+              - label:
+                  text: "Fan"
+                  text_font: roboto_12
+                  text_color: 0xAAAAAA
+                  align: LEFT_MID
+                  x: 45
+                  y: -12
+              - label:
+                  id: val_p_fan
+                  text: "--"
+                  text_font: roboto_24
+                  text_color: 0xFFFFFF
+                  align: LEFT_MID
+                  x: 45
+                  y: 12
+
+        # ==================== LAYER ====================
+        - button:
+            x: 165
+            y: 165
+            width: 150
+            height: 63
+            bg_opa: TRANSP
+            border_width: 0
+            shadow_width: 0
+            radius: 0
+            scrollbar_mode: "off"
+            widgets:
+              - label:
+                  text: ""
+                  text_font: icon_font_32
+                  text_color: 0x888888
+                  align: LEFT_MID
+                  x: 5
+              - label:
+                  text: "Layer"
+                  text_font: roboto_12
+                  text_color: 0xAAAAAA
+                  align: LEFT_MID
+                  x: 45
+                  y: -12
+              - label:
+                  id: val_p_layer
+                  text: "--"
+                  text_font: roboto_24
+                  text_color: 0xFFFFFF
+                  align: LEFT_MID
+                  x: 45
+                  y: 12
+
+    - id: radar_page
+      bg_color: 0x000000
+      widgets:
+        # --- HEADER ---
+        - label:
+            text: "Plane Radar"
+            text_font: roboto_16
+            text_color: 0xFFFFFF
+            x: 5
+            y: 5
+        - button:
+            align: TOP_MID
+            y: 2
+            width: 70
+            height: 22
+            bg_opa: TRANSP
+            border_width: 0
+            shadow_width: 0
+            radius: 0
+            scrollbar_mode: "off"
+            widgets:
+              - label:
+                  text: "Home >"
+                  text_font: roboto_12
+                  text_color: 0x00BFFF
+                  align: CENTER
+            on_press:
+              - lvgl.page.next:
+
+        # --- TEXT SUMMARY (filled by radar::summarize() in radar.h) ---
+        - label:
+            id: val_radar_status
+            text: "-- aircraft"
+            text_font: roboto_12
+            text_color: 0xAAAAAA
+            x: 5
+            y: 32
+
+        - label:
+            text: "NEAREST"
+            text_font: roboto_12
+            text_color: 0x00BFFF
+            x: 5
+            y: 54
+        - label:
+            id: val_radar_callsign
+            text: "--"
+            text_font: roboto_24
+            text_color: 0xFFFFFF
+            x: 5
+            y: 70
+        - label:
+            id: val_radar_line1
+            text: "--"
+            text_font: roboto_16
+            text_color: 0xFFFFFF
+            x: 5
+            y: 102
+        - label:
+            id: val_radar_line2
+            text: "--"
+            text_font: roboto_16
+            text_color: 0xFFFFFF
+            x: 5
+            y: 126
+        - label:
+            id: val_radar_sub
+            text: ""
+            text_font: roboto_12
+            text_color: 0xAAAAAA
+            x: 5
+            y: 150
+
+        - label:
+            text: "ALSO NEARBY"
+            text_font: roboto_12
+            text_color: 0x00BFFF
+            x: 5
+            y: 178
+        - label:
+            id: val_radar_next1
+            text: ""
+            text_font: roboto_12
+            text_color: 0xCCCCCC
+            x: 5
+            y: 196
+        - label:
+            id: val_radar_next2
+            text: ""
+            text_font: roboto_12
+            text_color: 0xCCCCCC
+            x: 5
+            y: 214
